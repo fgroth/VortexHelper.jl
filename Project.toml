@@ -1,0 +1,4 @@
+name = "VortexHelper"
+uuid = "52bd22d0-9f82-43d0-9beb-53c2de939117"
+authors = ["Frederick Groth <fgroth@usm.lmu.de>"]
+version = "0.1.0"

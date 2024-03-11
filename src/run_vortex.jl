@@ -1,0 +1,142 @@
+using GadgetIO
+using Formatting
+
+"""
+    run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing)
+
+Run Vortex for given snapshots of `cluster` and `method`.
+"""
+function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing)
+    
+    dir = "../../test_runs/"
+
+    last_snapnum=zeros(Int64,1)
+    for snapnum in end_snap_num:-1:start_snap_num
+        if isdir(dir*"out_"*cluster*"_"*method*"/"*"snapdir_"*sprintf1("%03d",snapnum))
+            last_snapnum[1] = snapnum
+            break
+        else
+            continue
+        end
+    end
+
+    println("last snap num is ",last_snapnum[1])
+    
+    this_dir = @__DIR__
+
+    rm("vortex-GADGET/src/simulation")
+    symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/","vortex-GADGET/src/simulation")
+
+    try
+        mkdir("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method)
+    catch
+        println("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*" already exists")
+        # directory already exists
+    end
+    snaps_todo = if snaps_todo == nothing
+        start_snap_num:last_snapnum[1]
+    else
+        snaps_todo
+    end
+    for i_snap in snaps_todo
+        println("running ",i_snap)
+        snap = dir * "/out_"*cluster*"_"*method*"/snapdir_"*sprintf1("%03d",i_snap)*"/snap_"*sprintf1("%03d",i_snap)
+        sub = dir * "/out_"*cluster*"_"*method*"/groups_"*sprintf1("%03d",i_snap)*"/sub_"*sprintf1("%03d",i_snap)
+
+        halo_positions = read_subfind(sub, "GPOS")
+        halo_radii = try
+            read_subfind(sub, "RTOP")
+        catch
+            read_subfind(sub, "RVIR")
+        end
+        
+        first_halo_position = halo_positions[:,1]
+        println("first halo position ",first_halo_position)
+        
+        first_halo_radius = halo_radii[1]
+        println("first halo radius ",first_halo_radius)
+
+        par_name = "vortex-GADGET/src/vortex.dat"
+        this_par = open(par_name,"w")
+
+        write(this_par, "***********************************************************************
+*                  VORTEX-GADGET PARAMETERS FILE                      *
+***********************************************************************
+*       General parameters block                                      *
+***********************************************************************
+Files: first, last, every, num files per snapshot -------------------->\n")
+        # adjust snap number
+        write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,4\n")
+        write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->
+128,128,128
+Max box sidelength (in input length units) --------------------------->\n")
+        # adjust size
+        #size = scale*first_halo_radius
+        size = 25e3
+        write(this_par, sprintf1("%g",2*size)*"\n")
+        write(this_par, "Output flags (1=yes; 0=no): verbose, write div/rot, write pot, write v>
+1,1,1,1\n")
+        write(this_par, "Output mass density (input units) instead of kernel lengths (1=yes) -->\n 1 \n")
+        write(this_par, "Domain to keep particles (in input length units; x1,x2,y1,y2,z1,z2) -->\n")
+        write(this_par, sprintf1("%g",first_halo_position[1]-size)*","*sprintf1("%g",first_halo_position[1]+size)*","*
+            sprintf1("%g",first_halo_position[2]-size)*","*sprintf1("%g",first_halo_position[2]+size)*","*
+            sprintf1("%g",first_halo_position[3]-size)*","*sprintf1("%g",first_halo_position[3]+size)*"\n")
+        write(this_par, "***********************************************************************
+*       Mesh creation parameters                                      *
+***********************************************************************
+Number of levels ----------------------------------------------------->
+9
+Number of particles for a cell to be refinable ----------------------->
+8
+Minimum size of a refinement patch to be accepted -------------------->
+6
+Cells not to be refined from the border (base grid) ------------------>
+2
+***********************************************************************
+*       Velocity interpolation parameters                             *
+***********************************************************************
+Number of neighbours for interpolation ------------------------------->
+16
+Kernel (1=W4, 2=C4, 3=C6) -------------------------------------------->\n")
+        this_kernel = if method == "mfm"
+            1
+        else
+            3
+        end
+        write(this_par,sprintf1("%d",this_kernel)*"\n")
+        write(this_par,"***********************************************************************
+*       Poisson solver                                                *
+***********************************************************************
+SOR presion parameter, SOR max iter, border for AMR patches ---------->
+1e-9,1000,2
+***********************************************************************
+*       Multifiltering                                                *
+***********************************************************************
+Multiscale filter: apply filter -------------------------------------->
+0
+Output filtering lengths (separate file) ----------------------------->
+1
+Filtering parameters: tolerance, growing step, max. num. of its. ----->
+0.1,1.05,200
+***********************************************************************
+*       On-the-fly shock detection (for multifiltering)               *
+***********************************************************************
+Threshold on velocity divergence (negative, input units) ------------->
+-1.25
+Threshold on artificial bulk viscosity constant ---------------------->
+1.
+Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
+1,2.0\n")
+
+        # adjust position
+
+        close(this_par)
+
+        cd("./vortex-GADGET/src/")
+        run(`./run.sh`)
+        mv("output_files/","/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
+        mkdir("output_files/")
+        cd(this_dir)
+    end
+
+end
