@@ -4,7 +4,7 @@ using FortranFiles
     read_particle_data(file::String, include_density::Bool=true)
 
 Read particle data from unformatted fortran output of vortex.
-Return `pos`, `mass`, `vel`, `velcomp`, `velrot` vectors.
+Return `pos`, `vel`, `mass`, `vel_orig`, `velcomp`, `velrot`(, `rho`) vectors.
 """
 function read_particle_data(file::String, include_density::Bool=true)
 
@@ -26,6 +26,12 @@ function read_particle_data(file::String, include_density::Bool=true)
     # read mass
     mass = zeros(Float32,n)
     mass = read(f,mass)
+
+    # read velocities
+    vel_orig = zeros(Float32,3,n)
+    vel_orig[1,:] = read(f,vel[1,:])
+    vel_orig[2,:] = read(f,vel[2,:])
+    vel_orig[3,:] = read(f,vel[3,:])
     
     # read compressive velocities
     velcomp = zeros(Float32,3,n)
@@ -46,9 +52,9 @@ function read_particle_data(file::String, include_density::Bool=true)
     end
 
     if include_density
-        return pos, mass, vel, velcomp, velrot, rho
+        return pos, vel, mass, vel_orig, velcomp, velrot, rho
     else
-        return pos, mass, vel, velcomp, velrot
+        return pos, vel, mass, vel_orig, velcomp, velrot
     end
 
 end
