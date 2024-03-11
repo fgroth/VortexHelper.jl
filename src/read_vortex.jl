@@ -17,15 +17,15 @@ function read_particle_data(file::String)
     pos[2,:] = read(f,pos[2,:])
     pos[3,:] = read(f,pos[3,:])
 
-    # read mass
-    mass = zeros(Float32,n)
-    mass = read(f,mass)
-
     # read velocities
     vel = zeros(Float32,3,n)
     vel[1,:] = read(f,vel[1,:])
     vel[2,:] = read(f,vel[2,:])
     vel[3,:] = read(f,vel[3,:])
+
+    # read mass
+    mass = zeros(Float32,n)
+    mass = read(f,mass)
     
     # read compressive velocities
     velcomp = zeros(Float32,3,n)
