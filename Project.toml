@@ -2,3 +2,8 @@ name = "VortexHelper"
 uuid = "52bd22d0-9f82-43d0-9beb-53c2de939117"
 authors = ["Frederick Groth <fgroth@usm.lmu.de>"]
 version = "0.1.0"
+
+[deps]
+Formatting = "59287772-0a20-5a39-b81b-1366585eb4c0"
+FortranFiles = "c58ffaec-ab22-586d-bfc5-781a99fd0b10"
+GadgetIO = "826b50da-1eb7-48f3-bd4b-d2350582c309"
