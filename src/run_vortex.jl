@@ -6,7 +6,8 @@ using Formatting
 
 Run Vortex for given snapshots of `cluster` and `method`.
 """
-function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing)
+function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing,
+                    new::Bool=true, filtering::Bool=false)
     
     dir = "../../test_runs/"
 
@@ -22,10 +23,24 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
 
     println("last snap num is ",last_snapnum[1])
     
-    this_dir = pwd() # @__DIR__
+    this_dir = pwd()
 
-    rm("vortex-GADGET/src/simulation")
-    symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/","vortex-GADGET/src/simulation")
+    # create temporary directory to run vortex.
+    tmp_dir = mktempdir("./")
+    vortex_dir = if new
+        "vortex-p/src/"
+    else
+        "vortex-GADGET/src/"
+    end
+    vortex_exec = "vortex_"*method
+    vortex_exec = if filtering
+        vortex_exec * "_filtered"
+    else
+        vortex_exec * "_unfiltered"
+    end
+    cp(vortex_dir, tmp_dir*"/src")
+    
+    symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/",tmp_dir*"/simulation")
 
     try
         mkdir("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method)
@@ -56,7 +71,7 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
         first_halo_radius = halo_radii[1]
         println("first halo radius ",first_halo_radius)
 
-        par_name = "vortex-GADGET/src/vortex.dat"
+        par_name = tmp_dir*"src/vortex.dat"
         this_par = open(par_name,"w")
 
         write(this_par, "***********************************************************************
@@ -74,13 +89,20 @@ Max box sidelength (in input length units) --------------------------->\n")
         #size = scale*first_halo_radius
         size = 25e3
         write(this_par, sprintf1("%g",2*size)*"\n")
-        write(this_par, "Output flags (1=yes; 0=no): verbose, write div/rot, write pot, write v>
-1,1,1,1\n")
-        write(this_par, "Output mass density (input units) instead of kernel lengths (1=yes) -->\n 1 \n")
         write(this_par, "Domain to keep particles (in input length units; x1,x2,y1,y2,z1,z2) -->\n")
         write(this_par, sprintf1("%g",first_halo_position[1]-size)*","*sprintf1("%g",first_halo_position[1]+size)*","*
             sprintf1("%g",first_halo_position[2]-size)*","*sprintf1("%g",first_halo_position[2]+size)*","*
             sprintf1("%g",first_halo_position[3]-size)*","*sprintf1("%g",first_halo_position[3]+size)*"\n")
+        write(this_par, "!***********************************************************************\n!*       Output customisation (0=no, 1=yes)                            *\n!***********************************************************************\n")
+        write(this_par, "!Gridded data: kernel length, density (mutually exclusive), velocity -->\n0,1,1\n")
+        write(this_par, "Gridded results: vcomp, vsol, scalar_pot, vector_pot, div(v), curl(v)->\n1,1,1,1,1,1\n")
+        write(this_par, "Particle results: interpolation error, particle-wise results --------->\n1,1\n")
+        write(this_par, "Filter: gridded Mach/ABVC, shocked cells, filtering length, vturb ---->\n")
+        if filtering
+            write(this_par, "1,1,1,1\n")
+        else
+            write(this_par, "0,0,0,0\n")
+        end
         write(this_par, "***********************************************************************
 *       Mesh creation parameters                                      *
 ***********************************************************************
@@ -96,14 +118,7 @@ Cells not to be refined from the border (base grid) ------------------>
 *       Velocity interpolation parameters                             *
 ***********************************************************************
 Number of neighbours for interpolation ------------------------------->
-16
-Kernel (1=W4, 2=C4, 3=C6) -------------------------------------------->\n")
-        this_kernel = if method == "mfm"
-            1
-        else
-            3
-        end
-        write(this_par,sprintf1("%d",this_kernel)*"\n")
+16\n")
         write(this_par,"***********************************************************************
 *       Poisson solver                                                *
 ***********************************************************************
@@ -114,8 +129,6 @@ SOR presion parameter, SOR max iter, border for AMR patches ---------->
 ***********************************************************************
 Multiscale filter: apply filter -------------------------------------->
 0
-Output filtering lengths (separate file) ----------------------------->
-1
 Filtering parameters: tolerance, growing step, max. num. of its. ----->
 0.1,1.05,200
 ***********************************************************************
@@ -132,11 +145,25 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
 
         close(this_par)
 
-        cd("./vortex-GADGET/src/")
+        cd(tmp_dir*"/src/")
+        mkdir("output_files/")
+        run_sh = open("run.sh","w")
+        write(run_sh, "#!/bin/bash\n")
+        write(run_sh, "\n")
+        write(run_sh, "ulimit -s 128000000\n")
+        write(run_sh, "ulimit -v 500000000\n")
+        write(run_sh, "ulimit -c 0\n")
+        write(run_sh, "export OMP_NUM_THREADS=16\n")
+        write(run_sh, "export OMP_STACKSIZE=4000m\n")
+        write(run_sh, "export OMP_PROC_BIND=true\n")
+        write(run_sh, "\n")
+        write(run_sh,"./"*vortex_exec*"\n")
+        close(run_sh)
+        chmod("run.sh",0o700)
         run(`./run.sh`)
         mv("output_files/","/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
-        mkdir("output_files/")
         cd(this_dir)
+        rm(tmp_dir)
     end
 
 end
