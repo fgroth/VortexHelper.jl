@@ -71,7 +71,7 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
         first_halo_radius = halo_radii[1]
         println("first halo radius ",first_halo_radius)
 
-        par_name = tmp_dir*"src/vortex.dat"
+        par_name = tmp_dir*"/src/vortex.dat"
         this_par = open(par_name,"w")
 
         write(this_par, "***********************************************************************
