@@ -40,7 +40,7 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
     end
     cp(vortex_dir, tmp_dir*"/src")
     
-    symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/",tmp_dir*"/simulation")
+    symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/",tmp_dir*"/src/simulation")
 
     try
         mkdir("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method)
@@ -163,7 +163,7 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
         run(`./run.sh`)
         mv("output_files/","/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
         cd(this_dir)
-        rm(tmp_dir)
+        rm(tmp_dir,force=false, recursive=false)
     end
 
 end
