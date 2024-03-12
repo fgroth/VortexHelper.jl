@@ -22,7 +22,7 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
 
     println("last snap num is ",last_snapnum[1])
     
-    this_dir = @__DIR__
+    this_dir = pwd() # @__DIR__
 
     rm("vortex-GADGET/src/simulation")
     symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/","vortex-GADGET/src/simulation")
