@@ -117,8 +117,12 @@ Cells not to be refined from the border (base grid) ------------------>
 ***********************************************************************
 *       Velocity interpolation parameters                             *
 ***********************************************************************
-Number of neighbours for interpolation ------------------------------->
-16\n")
+Number of neighbours for interpolation ------------------------------->\n")
+        if method == "mfm"
+            write(this_par, "32\n")
+        else
+            write(this_par, "295\n")
+        end
         write(this_par,"***********************************************************************
 *       Poisson solver                                                *
 ***********************************************************************
@@ -163,7 +167,7 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
         run(`./run.sh`)
         mv("output_files/","/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
         cd(this_dir)
-        rm(tmp_dir,force=false, recursive=false)
+        rm(tmp_dir,force=true, recursive=true)
     end
 
 end
