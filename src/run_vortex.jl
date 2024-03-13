@@ -9,7 +9,7 @@ Run Vortex for given snapshots of `cluster` and `method`.
 function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing,
                     new::Bool=true, filtering::Bool=false)
     
-    dir = "../../test_runs/"
+    dir = "/home/moon/fgroth/phd/test_runs/test_collection/test_runs/"
 
     last_snapnum=zeros(Int64,1)
     for snapnum in end_snap_num:-1:start_snap_num
@@ -39,8 +39,9 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
         vortex_exec * "_unfiltered"
     end
     cp(vortex_dir, tmp_dir*"/src")
+    cd(tmp_dir*"/src/")
     
-    symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/",tmp_dir*"/src/simulation")
+    symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/","./simulation")
 
     try
         mkdir("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method)
@@ -48,6 +49,21 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
         println("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*" already exists")
         # directory already exists
     end
+
+    run_sh = open("run.sh","w")
+    write(run_sh, "#!/bin/bash\n")
+    write(run_sh, "\n")
+    write(run_sh, "ulimit -s 128000000\n")
+    write(run_sh, "ulimit -v 500000000\n")
+    write(run_sh, "ulimit -c 0\n")
+    write(run_sh, "export OMP_NUM_THREADS=16\n")
+    write(run_sh, "export OMP_STACKSIZE=4000m\n")
+    write(run_sh, "export OMP_PROC_BIND=true\n")
+    write(run_sh, "\n")
+    write(run_sh,"./"*vortex_exec*"\n")
+    close(run_sh)
+    chmod("run.sh",0o700)
+    
     snaps_todo = if snaps_todo == nothing
         start_snap_num:last_snapnum[1]
     else
@@ -71,7 +87,7 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
         first_halo_radius = halo_radii[1]
         println("first halo radius ",first_halo_radius)
 
-        par_name = tmp_dir*"/src/vortex.dat"
+        par_name = "./vortex.dat"
         this_par = open(par_name,"w")
 
         write(this_par, "***********************************************************************
@@ -149,25 +165,11 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
 
         close(this_par)
 
-        cd(tmp_dir*"/src/")
         mkdir("output_files/")
-        run_sh = open("run.sh","w")
-        write(run_sh, "#!/bin/bash\n")
-        write(run_sh, "\n")
-        write(run_sh, "ulimit -s 128000000\n")
-        write(run_sh, "ulimit -v 500000000\n")
-        write(run_sh, "ulimit -c 0\n")
-        write(run_sh, "export OMP_NUM_THREADS=16\n")
-        write(run_sh, "export OMP_STACKSIZE=4000m\n")
-        write(run_sh, "export OMP_PROC_BIND=true\n")
-        write(run_sh, "\n")
-        write(run_sh,"./"*vortex_exec*"\n")
-        close(run_sh)
-        chmod("run.sh",0o700)
         run(`./run.sh`)
         mv("output_files/","/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
-        cd(this_dir)
-        rm(tmp_dir,force=true, recursive=true)
     end
-
+    cd(this_dir)
+    rm(tmp_dir,force=true, recursive=true)
+    
 end
