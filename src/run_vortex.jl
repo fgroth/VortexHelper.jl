@@ -2,7 +2,7 @@ using GadgetIO
 using Formatting
 
 """
-    run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing)
+    run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing, new::Bool=true, filtering::Bool=false)
 
 Run Vortex for given snapshots of `cluster` and `method`.
 """
@@ -32,7 +32,11 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
     else
         "vortex-GADGET/src/"
     end
-    vortex_exec = "vortex_"*method
+    vortex_exec = if occursin("mfm",method)
+        "vortex_mfm"
+    else
+        "vortex_sph"
+    end
     vortex_exec = if filtering
         vortex_exec * "_filtered"
     else
@@ -134,7 +138,7 @@ Cells not to be refined from the border (base grid) ------------------>
 *       Velocity interpolation parameters                             *
 ***********************************************************************
 Number of neighbours for interpolation ------------------------------->\n")
-        if method == "mfm"
+        if occursin("mfm",method)
             write(this_par, "32\n")
         else
             write(this_par, "295\n")

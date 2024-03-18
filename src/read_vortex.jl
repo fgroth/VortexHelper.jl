@@ -48,7 +48,7 @@ function read_particle_data(file::String, include_density::Bool=true)
     data["velrot"][3,:] = read(f,data["velrot"][3,:])
 
     if include_density
-        # read mass
+        # read density
         data["rho"] = zeros(Float32,n)
         data["rho"] = read(f,data["rho"])
     end
