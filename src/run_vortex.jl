@@ -1,6 +1,11 @@
 using GadgetIO
 using Formatting
 
+global test_runs = "/home/moon/fgroth/phd/test_runs/test_collection/test_runs/"
+function set_test_runs(dir::String="/home/moon/fgroth/phd/test_runs/test_collection/test_runs/")
+    global test_runs = dir
+end
+
 """
     run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing, new::Bool=true, filtering::Bool=false)
 
@@ -9,11 +14,9 @@ Run Vortex for given snapshots of `cluster` and `method`.
 function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing,
                     new::Bool=true, filtering::Bool=false)
     
-    dir = "/home/moon/fgroth/phd/test_runs/test_collection/test_runs/"
-
     last_snapnum=zeros(Int64,1)
     for snapnum in end_snap_num:-1:start_snap_num
-        if isdir(dir*"out_"*cluster*"_"*method*"/"*"snapdir_"*sprintf1("%03d",snapnum))
+        if isdir(test_runs*"out_"*cluster*"_"*method*"/"*"snapdir_"*sprintf1("%03d",snapnum))
             last_snapnum[1] = snapnum
             break
         else
@@ -45,12 +48,12 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
     cp(vortex_dir, tmp_dir*"/src")
     cd(tmp_dir*"/src/")
     
-    symlink("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/out_"*cluster*"_"*method*"/","./simulation")
+    symlink(test_runs*"/out_"*cluster*"_"*method*"/","./simulation")
 
     try
-        mkdir("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method)
+        mkdir(test_runs*"/vortex_analysis/"*cluster*"_"*method)
     catch
-        println("/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*" already exists")
+        println(test_runs*"/vortex_analysis/"*cluster*"_"*method*" already exists")
         # directory already exists
     end
 
@@ -75,8 +78,8 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
     end
     for i_snap in snaps_todo
         println("running ",i_snap)
-        snap = dir * "/out_"*cluster*"_"*method*"/snapdir_"*sprintf1("%03d",i_snap)*"/snap_"*sprintf1("%03d",i_snap)
-        sub = dir * "/out_"*cluster*"_"*method*"/groups_"*sprintf1("%03d",i_snap)*"/sub_"*sprintf1("%03d",i_snap)
+        snap = test_runs * "/out_"*cluster*"_"*method*"/snapdir_"*sprintf1("%03d",i_snap)*"/snap_"*sprintf1("%03d",i_snap)
+        sub = test_runs * "/out_"*cluster*"_"*method*"/groups_"*sprintf1("%03d",i_snap)*"/sub_"*sprintf1("%03d",i_snap)
 
         halo_positions = read_subfind(sub, "GPOS")
         halo_radii = try
@@ -171,7 +174,7 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
 
         mkdir("output_files/")
         run(`./run.sh`)
-        mv("output_files/","/home/moon/fgroth/phd/test_runs/test_collection/test_runs/vortex_analysis/"*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
+        mv("output_files/",test_runs*"/vortex_analysis/"*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
     end
     cd(this_dir)
     rm(tmp_dir,force=true, recursive=true)
