@@ -16,7 +16,7 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
     
     last_snapnum=zeros(Int64,1)
     for snapnum in end_snap_num:-1:start_snap_num
-        if isdir(test_runs*"out_"*cluster*"_"*method*"/"*"snapdir_"*sprintf1("%03d",snapnum))
+        if isdir(test_runs*"/out_"*cluster*"_"*method*"/"*"snapdir_"*sprintf1("%03d",snapnum))
             last_snapnum[1] = snapnum
             break
         else
@@ -50,10 +50,16 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
     
     symlink(test_runs*"/out_"*cluster*"_"*method*"/","./simulation")
 
+    prefix = if filtering
+        "filterd_"
+    else
+        ""
+    end
+
     try
-        mkdir(test_runs*"/vortex_analysis/"*cluster*"_"*method)
+        mkdir(test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method)
     catch
-        println(test_runs*"/vortex_analysis/"*cluster*"_"*method*" already exists")
+        println(test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method*" already exists")
         # directory already exists
     end
 
@@ -174,7 +180,7 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
 
         mkdir("output_files/")
         run(`./run.sh`)
-        mv("output_files/",test_runs*"/vortex_analysis/"*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
+        mv("output_files/",test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
     end
     cd(this_dir)
     rm(tmp_dir,force=true, recursive=true)
