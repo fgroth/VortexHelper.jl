@@ -51,7 +51,7 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
     symlink(test_runs*"/out_"*cluster*"_"*method*"/","./simulation")
 
     prefix = if filtering
-        "filterd_"
+        "filtered_"
     else
         ""
     end
