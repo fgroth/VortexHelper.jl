@@ -160,9 +160,13 @@ SOR presion parameter, SOR max iter, border for AMR patches ---------->
 ***********************************************************************
 *       Multifiltering                                                *
 ***********************************************************************
-Multiscale filter: apply filter -------------------------------------->
-0
-Filtering parameters: tolerance, growing step, max. num. of its. ----->
+Multiscale filter: apply filter -------------------------------------->\n")
+        if filtering
+            write(this_par, "1,1,1,1\n")
+        else
+            write(this_par, "0,0,0,0\n")
+        end
+write(this_par, "Filtering parameters: tolerance, growing step, max. num. of its. ----->
 0.1,1.05,200
 ***********************************************************************
 *       On-the-fly shock detection (for multifiltering)               *
