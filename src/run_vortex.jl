@@ -184,7 +184,7 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
 
         mkdir("output_files/")
         run(`./run.sh`)
-        mv("output_files/",test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method*"/"*sprintf1("%d",i_snap),force=true)
+        mv("output_files/",test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method*"/"*sprintf1("%03d",i_snap),force=true)
     end
     cd(this_dir)
     rm(tmp_dir,force=true, recursive=true)
