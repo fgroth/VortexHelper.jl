@@ -7,12 +7,17 @@ function set_test_runs(dir::String="/home/moon/fgroth/phd/test_runs/test_collect
 end
 
 """
-    run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing, new::Bool=true, filtering::Bool=false)
+    run_vortex(cluster::String, method::String; 
+               start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing, 
+               new::Bool=true, filtering::Bool=false,
+               n_snap::Int64=4)
 
 Run Vortex for given snapshots of `cluster` and `method`.
 """
-function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing,
-                    new::Bool=true, filtering::Bool=false)
+function run_vortex(cluster::String, method::String;
+                    start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing,
+                    new::Bool=true, filtering::Bool=false,
+                    n_snap::Int64=4)
     
     last_snapnum=zeros(Int64,1)
     for snapnum in end_snap_num:-1:start_snap_num
@@ -110,7 +115,7 @@ function run_vortex(cluster::String, method::String; start_snap_num=100,end_snap
 ***********************************************************************
 Files: first, last, every, num files per snapshot -------------------->\n")
         # adjust snap number
-        write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,4\n")
+        write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*"%d",n_snap)*"\n")
         write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->
 128,128,128
 Max box sidelength (in input length units) --------------------------->\n")
