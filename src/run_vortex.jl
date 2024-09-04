@@ -115,7 +115,7 @@ function run_vortex(cluster::String, method::String;
 ***********************************************************************
 Files: first, last, every, num files per snapshot -------------------->\n")
         # adjust snap number
-        write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*"%d",n_snap)*"\n")
+        write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*sprintf1("%d",n_snap)*"\n")
         write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->
 128,128,128
 Max box sidelength (in input length units) --------------------------->\n")
