@@ -5,6 +5,7 @@ using FortranFiles
 
 Read particle data from unformatted fortran output of vortex.
 Return `Dict` containing `"pos"`, `"vel_orig"`, `"mass"`, `"vel"`, `"velcomp"`, `"velrot"`(, `"rho"`) vectors.
+The `"rho"` field is only a private patch to vortex to simplify some analyis, it is no present in the public version.
 """
 function read_particle_data(file::String, include_density::Bool=true)
 
