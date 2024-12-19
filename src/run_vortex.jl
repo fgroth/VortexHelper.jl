@@ -1,7 +1,12 @@
 using GadgetIO
 using Formatting
 
-global test_runs = "/home/moon/fgroth/phd/test_runs/test_collection/test_runs/"
+global test_runs::String = "/home/moon/fgroth/phd/test_runs/test_collection/test_runs/"
+"""
+    set_test_runs(dir::String="/home/moon/fgroth/phd/test_runs/test_collection/test_runs/")
+
+Set the global `testruns` variable that is used to locate the output of simulations.
+"""
 function set_test_runs(dir::String="/home/moon/fgroth/phd/test_runs/test_collection/test_runs/")
     global test_runs = dir
 end
