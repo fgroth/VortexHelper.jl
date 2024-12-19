@@ -17,5 +17,3 @@ It requires an executable vortex_mfm/sph_(un)filtered in ./vortex-p/src (or ./vo
 ## Reading the output
 
 The particle output can be read using `read_particle_data` making use of the FortranFiles package.
-
-Other data should be read with standard Gadget format 2 reading functions, e.g., by using the GadgetIO package (https://github.com/LudwigBoess/GadgetIO.jl)
