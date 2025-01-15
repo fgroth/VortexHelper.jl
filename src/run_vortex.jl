@@ -60,7 +60,8 @@ function run_vortex(cluster::String, method::String;
     end
     cp(vortex_directory*"/src/", tmp_dir*"/src")
     cd(tmp_dir*"/src/")
-    
+
+    # this is where vortex takes the input data from
     symlink(test_runs*"/out_"*cluster*"_"*method*"/","./simulation")
 
     prefix = if filtering
@@ -76,6 +77,7 @@ function run_vortex(cluster::String, method::String;
         # directory already exists
     end
 
+    # prepare the executable to run vortex
     run_sh = open("run.sh","w")
     write(run_sh, "#!/bin/bash\n")
     write(run_sh, "\n")
@@ -95,6 +97,7 @@ function run_vortex(cluster::String, method::String;
     else
         snaps_todo
     end
+
     for i_snap in snaps_todo
         println("running ",i_snap)
         snap = test_runs * "/out_"*cluster*"_"*method*"/snapdir_"*sprintf1("%03d",i_snap)*"/snap_"*sprintf1("%03d",i_snap)
@@ -113,6 +116,7 @@ function run_vortex(cluster::String, method::String;
         first_halo_radius = halo_radii[1]
         println("first halo radius ",first_halo_radius)
 
+        # prepare the vortex parameter file
         par_name = "./vortex.dat"
         this_par = open(par_name,"w")
 
@@ -191,14 +195,17 @@ Threshold on artificial bulk viscosity constant ---------------------->
 Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
 1,2.0\n")
 
-        # adjust position
-
         close(this_par)
 
+        # this directory is required by vortex, all outputfiles are stored there
         mkdir("output_files/")
+        # run vortex using the executable created above
         run(`./run.sh`)
+        # move the output files to a standardized directory
         mv("output_files/",test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method*"/"*sprintf1("%03d",i_snap),force=true)
     end
+    
+    # change back to original directory and clean up
     cd(this_dir)
     rm(tmp_dir,force=true, recursive=true)
     
