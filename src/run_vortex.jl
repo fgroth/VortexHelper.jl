@@ -1,7 +1,7 @@
 using GadgetIO
 using Formatting
 
-global test_runs::String = "/home/moon/fgroth/phd/test_runs/test_collection/test_runs/"
+global test_runs = "/home/moon/fgroth/phd/test_runs/test_collection/test_runs/"
 """
     set_test_runs(dir::String="/home/moon/fgroth/phd/test_runs/test_collection/test_runs/")
 
@@ -14,14 +14,18 @@ end
 """
     run_vortex(cluster::String, method::String; 
                start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing, 
-               new::Bool=true, filtering::Bool=false,
+               vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
+               # adjust the vortex parameters
+               filtering::Bool=false,
                n_snap::Int64=4)
 
 Run Vortex for given snapshots of `cluster` and `method`.
 """
 function run_vortex(cluster::String, method::String;
                     start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing,
-                    new::Bool=true, filtering::Bool=false,
+                    vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
+                    # adjust the vortex parameters
+                    filtering::Bool=false,
                     n_snap::Int64=4)
     
     last_snapnum=zeros(Int64,1)
@@ -40,11 +44,6 @@ function run_vortex(cluster::String, method::String;
 
     # create temporary directory to run vortex.
     tmp_dir = mktempdir("./")
-    vortex_dir = if new
-        "vortex-p/src/"
-    else
-        "vortex-GADGET/src/"
-    end
     vortex_exec = if occursin("mfm",method)
         "vortex_mfm"
     else
@@ -55,7 +54,7 @@ function run_vortex(cluster::String, method::String;
     else
         vortex_exec * "_unfiltered"
     end
-    cp(vortex_dir, tmp_dir*"/src")
+    cp(vortex_directory*"/src/", tmp_dir*"/src")
     cd(tmp_dir*"/src/")
     
     symlink(test_runs*"/out_"*cluster*"_"*method*"/","./simulation")

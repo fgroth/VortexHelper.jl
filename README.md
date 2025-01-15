@@ -13,7 +13,7 @@ All vortex output will be located within directories test_runs/vortex_analysis/(
 ## Running vortex
 
 Use the function `run_vortex`. This creates appropriate vortex parameter files and executes the program.
-It requires an executable vortex_mfm/sph_(un)filtered in ./vortex-p/src (or ./vortex-GADGET/src if `new=false`) which has to be compiled before.
+It requires an executable vortex_mfm/sph_(un)filtered in ./vortex-p/src (or any other directory specified with the `vortex_directory` parameter) which has to be compiled before.
 
 ## Reading the output
 
