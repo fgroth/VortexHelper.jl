@@ -17,7 +17,9 @@ end
                vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
                # adjust the vortex parameters
                filtering::Bool=false,
-               n_snap::Int64=4)
+               n_snap::Int64=4,
+               cells_per_direction::Int64=128,
+               n_levels::Int64=9, n_particles_refinement::Int64=8)
 
 Run Vortex for given snapshots of `cluster` and `method`.
 """
@@ -26,7 +28,9 @@ function run_vortex(cluster::String, method::String;
                     vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
                     # adjust the vortex parameters
                     filtering::Bool=false,
-                    n_snap::Int64=4)
+                    n_snap::Int64=4,
+                    cells_per_direction::Int64=128,
+                    n_levels::Int64=9, n_particles_refinement::Int64=8)
     
     last_snapnum=zeros(Int64,1)
     for snapnum in end_snap_num:-1:start_snap_num
@@ -120,9 +124,9 @@ function run_vortex(cluster::String, method::String;
 Files: first, last, every, num files per snapshot -------------------->\n")
         # adjust snap number
         write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*sprintf1("%d",n_snap)*"\n")
-        write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->
-128,128,128
-Max box sidelength (in input length units) --------------------------->\n")
+        write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->\n")
+        write(this_par, sprintf("%g",cells_per_direction)*","*sprintf("%g",cells_per_direction)*","*sprintf("%g",cells_per_direction)*"\n")
+        write(this_par, "Max box sidelength (in input length units) --------------------------->\n")
         # adjust size
         #size = scale*first_halo_radius
         size = 25e3
@@ -144,11 +148,11 @@ Max box sidelength (in input length units) --------------------------->\n")
         write(this_par, "***********************************************************************
 *       Mesh creation parameters                                      *
 ***********************************************************************
-Number of levels ----------------------------------------------------->
-9
-Number of particles for a cell to be refinable ----------------------->
-8
-Minimum size of a refinement patch to be accepted -------------------->
+Number of levels ----------------------------------------------------->\n")
+        write(this_par, sprintf1("%d",n_levels)*"\n")
+        write(this_par, "Number of particles for a cell to be refinable ----------------------->\n")
+        write(this_par, sprintf1("%g",n_particles_refinement)*"\n")
+        write(this_par, "Minimum size of a refinement patch to be accepted -------------------->
 6
 Cells not to be refined from the border (base grid) ------------------>
 2
