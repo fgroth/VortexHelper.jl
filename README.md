@@ -1,6 +1,7 @@
 # VortexHelper.jl
 
-This package is designed to simplify the usage and analysis if the vortex-p code (https://github.com/dvallesp/vortex-p) in using some julia wrappers.
+This package is designed to simplify the usage and analysis of the vortex-p code (https://github.com/dvallesp/vortex-p).
+In particular, it contains julia wrapper function to execute the vortex program and read in the particle data.
 
 ## Preparation
 
