@@ -129,7 +129,7 @@ Files: first, last, every, num files per snapshot -------------------->\n")
         # adjust snap number
         write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*sprintf1("%d",n_snap)*"\n")
         write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->\n")
-        write(this_par, sprintf("%g",cells_per_direction)*","*sprintf("%g",cells_per_direction)*","*sprintf("%g",cells_per_direction)*"\n")
+        write(this_par, sprintf1("%g",cells_per_direction)*","*sprintf1("%g",cells_per_direction)*","*sprintf1("%g",cells_per_direction)*"\n")
         write(this_par, "Max box sidelength (in input length units) --------------------------->\n")
         # adjust size
         #size = scale*first_halo_radius
