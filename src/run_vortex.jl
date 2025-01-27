@@ -129,16 +129,16 @@ Files: first, last, every, num files per snapshot -------------------->\n")
         # adjust snap number
         write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*sprintf1("%d",n_snap)*"\n")
         write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->\n")
-        write(this_par, sprintf1("%g",cells_per_direction)*","*sprintf1("%g",cells_per_direction)*","*sprintf1("%g",cells_per_direction)*"\n")
+        write(this_par, sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*"\n")
         write(this_par, "Max box sidelength (in input length units) --------------------------->\n")
         # adjust size
         #size = scale*first_halo_radius
         size = 25e3
-        write(this_par, sprintf1("%g",2*size)*"\n")
+        write(this_par, sprintf1("%f",2*size)*"\n")
         write(this_par, "Domain to keep particles (in input length units; x1,x2,y1,y2,z1,z2) -->\n")
-        write(this_par, sprintf1("%g",first_halo_position[1]-size)*","*sprintf1("%g",first_halo_position[1]+size)*","*
-            sprintf1("%g",first_halo_position[2]-size)*","*sprintf1("%g",first_halo_position[2]+size)*","*
-            sprintf1("%g",first_halo_position[3]-size)*","*sprintf1("%g",first_halo_position[3]+size)*"\n")
+        write(this_par, sprintf1("%f",first_halo_position[1]-size)*","*sprintf1("%f",first_halo_position[1]+size)*","*
+            sprintf1("%f",first_halo_position[2]-size)*","*sprintf1("%f",first_halo_position[2]+size)*","*
+            sprintf1("%f",first_halo_position[3]-size)*","*sprintf1("%f",first_halo_position[3]+size)*"\n")
         write(this_par, "!***********************************************************************\n!*       Output customisation (0=no, 1=yes)                            *\n!***********************************************************************\n")
         write(this_par, "!Gridded data: kernel length, density (mutually exclusive), velocity -->\n0,1,1\n")
         write(this_par, "Gridded results: vcomp, vsol, scalar_pot, vector_pot, div(v), curl(v)->\n1,1,1,1,1,1\n")
@@ -155,7 +155,7 @@ Files: first, last, every, num files per snapshot -------------------->\n")
 Number of levels ----------------------------------------------------->\n")
         write(this_par, sprintf1("%d",n_levels)*"\n")
         write(this_par, "Number of particles for a cell to be refinable ----------------------->\n")
-        write(this_par, sprintf1("%g",n_particles_refinement)*"\n")
+        write(this_par, sprintf1("%d",n_particles_refinement)*"\n")
         write(this_par, "Minimum size of a refinement patch to be accepted -------------------->
 6
 Cells not to be refined from the border (base grid) ------------------>
@@ -198,11 +198,11 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
         close(this_par)
 
         # this directory is required by vortex, all outputfiles are stored there
-        mkdir("output_files/")
+        mkdir("output_files")
         # run vortex using the executable created above
         run(`./run.sh`)
         # move the output files to a standardized directory
-        mv("output_files/",test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method*"/"*sprintf1("%03d",i_snap),force=true)
+        mv("output_files",joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method, sprintf1("%03d",i_snap)),force=true)
     end
     
     # change back to original directory and clean up
