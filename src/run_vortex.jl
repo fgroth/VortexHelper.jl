@@ -34,7 +34,7 @@ function run_vortex(cluster::String, method::String;
     
     last_snapnum=zeros(Int64,1)
     for snapnum in end_snap_num:-1:start_snap_num
-        if isdir(test_runs*"/out_"*cluster*"_"*method*"/"*"snapdir_"*sprintf1("%03d",snapnum))
+        if isdir(joinpath(test_runs, "out_"*cluster*"_"*method, "snapdir_"*sprintf1("%03d",snapnum)))
             last_snapnum[1] = snapnum
             break
         else
@@ -58,11 +58,11 @@ function run_vortex(cluster::String, method::String;
     else
         vortex_exec * "_unfiltered"
     end
-    cp(vortex_directory*"/src/", tmp_dir*"/src")
-    cd(tmp_dir*"/src/")
+    cp(joinpath(vortex_directory, "src"), joinpath(tmp_dir, "src"))
+    cd(joinpath(tmp_dir, "src"))
 
     # this is where vortex takes the input data from
-    symlink(test_runs*"/out_"*cluster*"_"*method*"/","./simulation")
+    symlink(joinpath(test_runs, "out_"*cluster*"_"*method),"./simulation")
 
     prefix = if filtering
         "filtered_"
@@ -71,9 +71,9 @@ function run_vortex(cluster::String, method::String;
     end
 
     try
-        mkdir(test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method)
+        mkdir(joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method))
     catch
-        println(test_runs*"/vortex_analysis/"*prefix*cluster*"_"*method*" already exists")
+        println(joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method)*" already exists")
         # directory already exists
     end
 
@@ -100,8 +100,8 @@ function run_vortex(cluster::String, method::String;
 
     for i_snap in snaps_todo
         println("running ",i_snap)
-        snap = test_runs * "/out_"*cluster*"_"*method*"/snapdir_"*sprintf1("%03d",i_snap)*"/snap_"*sprintf1("%03d",i_snap)
-        sub = test_runs * "/out_"*cluster*"_"*method*"/groups_"*sprintf1("%03d",i_snap)*"/sub_"*sprintf1("%03d",i_snap)
+        snap = joinpath(test_runs, "out_"*cluster*"_"*method, "snapdir_"*sprintf1("%03d",i_snap), "snap_"*sprintf1("%03d",i_snap))
+        sub = joinpath(test_runs * "out_"*cluster*"_"*method, "groups_"*sprintf1("%03d",i_snap), "sub_"*sprintf1("%03d",i_snap))
 
         halo_positions = read_subfind(sub, "GPOS")
         halo_radii = try
