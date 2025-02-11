@@ -64,16 +64,11 @@ function run_vortex(cluster::String, method::String;
     # this is where vortex takes the input data from
     symlink(joinpath(test_runs, "out_"*cluster*"_"*method),"./simulation")
 
-    prefix = if filtering
-        "filtered_"
-    else
-        ""
-    end
-
+    vortex_output = vortex_output_directory(cluster, method, filtering=filtering)
     try
-        mkdir(joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method))
+        mkdir(vortex_output)
     catch
-        println(joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method)*" already exists")
+        println(vortex_output*" already exists")
         # directory already exists
     end
 
@@ -202,11 +197,26 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
         # run vortex using the executable created above
         run(`./run.sh`)
         # move the output files to a standardized directory
-        mv("output_files",joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method, sprintf1("%03d",i_snap)),force=true)
+        mv("output_files",joinpath(vortex_output, sprintf1("%03d",i_snap)),force=true)
     end
     
     # change back to original directory and clean up
     cd(this_dir)
     rm(tmp_dir,force=true, recursive=true)
     
+end
+
+"""
+    vortex_output_directory(cluster::String, method::String; filtering::Bool=true)
+
+Return desired location of directory containing vortex output.
+"""
+function vortex_output_directory(cluster::String, method::String; filtering::Bool=true)
+    prefix = if filtering
+        "filtered_"
+    else
+        ""
+    end
+    
+    return joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method)
 end
