@@ -97,17 +97,17 @@ function run_vortex(cluster::String, method::String;
         sub = joinpath(test_runs * "out_"*cluster*"_"*method, "groups_"*sprintf1("%03d",i_snap), "sub_"*sprintf1("%03d",i_snap))
 
         halo_positions = read_subfind(sub, "GPOS")
-        halo_radii = try
-            read_subfind(sub, "RTOP")
-        catch
-            read_subfind(sub, "RVIR")
-        end
+        # halo_radii = try
+        #     read_subfind(sub, "RTOP")
+        # catch
+        #     read_subfind(sub, "RVIR")
+        # end
         
         first_halo_position = halo_positions[:,1]
         println("first halo position ",first_halo_position)
         
-        first_halo_radius = halo_radii[1]
-        println("first halo radius ",first_halo_radius)
+        # first_halo_radius = halo_radii[1]
+        # println("first halo radius ",first_halo_radius)
 
         # prepare the vortex parameter file
         par_name = "./vortex.dat"
