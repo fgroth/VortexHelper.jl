@@ -17,7 +17,6 @@ end
                vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
                # adjust the vortex parameters
                filtering::Bool=false,
-               n_snap::Int64=4,
                cells_per_direction::Int64=128,
                n_levels::Int64=9, n_particles_refinement::Int64=8)
 
@@ -28,7 +27,6 @@ function run_vortex(cluster::String, method::String;
                     vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
                     # adjust the vortex parameters
                     filtering::Bool=false,
-                    n_snap::Int64=4,
                     cells_per_direction::Int64=128,
                     n_levels::Int64=9, n_particles_refinement::Int64=8)
     
@@ -122,6 +120,7 @@ function run_vortex(cluster::String, method::String;
 ***********************************************************************
 Files: first, last, every, num files per snapshot -------------------->\n")
         # adjust snap number
+        n_snap = sum(startswith.(readdir(joinpath(test_runs, "out_"*cluster*"_"*method, "snapdir_"*sprintf1("%03d",i_snap))), "snap_"*sprintf1("%03d",i_snap)))
         write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*sprintf1("%d",n_snap)*"\n")
         write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->\n")
         write(this_par, sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*"\n")
