@@ -15,6 +15,7 @@ end
     run_vortex(cluster::String, method::String; 
                start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing, 
                vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
+               limit_resources::Bool=false,
                # adjust the vortex parameters
                filtering::Bool=false,
                cells_per_direction::Int64=128,
@@ -25,6 +26,7 @@ Run Vortex for given snapshots of `cluster` and `method`.
 function run_vortex(cluster::String, method::String;
                     start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing,
                     vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
+                    limit_resources::Bool=false,
                     # adjust the vortex parameters
                     filtering::Bool=false,
                     cells_per_direction::Int64=128,
@@ -74,9 +76,11 @@ function run_vortex(cluster::String, method::String;
     run_sh = open("run.sh","w")
     write(run_sh, "#!/bin/bash\n")
     write(run_sh, "\n")
-    write(run_sh, "ulimit -s 128000000\n")
-    write(run_sh, "ulimit -v 500000000\n")
-    write(run_sh, "ulimit -c 0\n")
+    if limit_resources
+        write(run_sh, "ulimit -s 128000000\n")
+        write(run_sh, "ulimit -v 500000000\n")
+        write(run_sh, "ulimit -c 0\n")
+    end
     write(run_sh, "export OMP_NUM_THREADS=16\n")
     write(run_sh, "export OMP_STACKSIZE=4000m\n")
     write(run_sh, "export OMP_PROC_BIND=true\n")
