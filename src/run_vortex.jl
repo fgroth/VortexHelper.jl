@@ -5,7 +5,7 @@ global test_runs = "/home/moon/fgroth/phd/test_runs/test_collection/test_runs/"
 """
     set_test_runs(dir::String="/home/moon/fgroth/phd/test_runs/test_collection/test_runs/")
 
-Set the global `testruns` variable that is used to locate the output of simulations.
+Set the global `test_runs` variable that is used to locate the output of simulations.
 """
 function set_test_runs(dir::String="/home/moon/fgroth/phd/test_runs/test_collection/test_runs/")
     global test_runs = dir
@@ -13,9 +13,10 @@ end
 
 """
     run_vortex(cluster::String, method::String; 
-               start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing, 
-               vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
-               limit_resources::Bool=false,
+               start_snap_num::Int64=100,end_snap_num::Int64=145, scale::Number=3, snaps_todo=nothing, 
+               vortex_directory::String="vortex-p",
+               limit_resources::Bool=true,
+               slurm_submission::Bool=false,
                # adjust the vortex parameters
                filtering::Bool=false,
                cells_per_direction::Int64=128,
@@ -24,9 +25,10 @@ end
 Run Vortex for given snapshots of `cluster` and `method`.
 """
 function run_vortex(cluster::String, method::String;
-                    start_snap_num=100,end_snap_num=145, scale=3, snaps_todo=nothing,
-                    vortex_directory::String="vortex-p", # use "vortex-GADGET" for old code version
-                    limit_resources::Bool=false,
+                    start_snap_num::Int64=100,end_snap_num::Int64=145, scale::Number=3, snaps_todo=nothing,
+                    vortex_directory::String="vortex-p",
+                    limit_resources::Bool=true,
+                    slurm_submission::Bool=false,
                     # adjust the vortex parameters
                     filtering::Bool=false,
                     cells_per_direction::Int64=128,
@@ -72,9 +74,26 @@ function run_vortex(cluster::String, method::String;
         # directory already exists
     end
 
+    snaps_todo = if snaps_todo == nothing
+        start_snap_num:last_snapnum[1]
+    else
+        snaps_todo
+    end
+
     # prepare the executable to run vortex
     run_sh = open("run.sh","w")
     write(run_sh, "#!/bin/bash\n")
+    if slurm_submission
+        write(run_sh, "#SBATCH -J vortex                     # name of the job\n")
+        write(run_sh, "#SBATCH -o ./%x.%j.out                # output log file with name <job_name>.<job_id>.out\n")
+        write(run_sh, "#SBATCH -e ./%x.%j.err                # error log file with name <job_name>.<job_id>.err\n")
+        write(run_sh, "#SBATCH -D ./                         # output directory\n")
+        write(run_sh, "#SBATCH --nodes=1                     # number of nodes\n")
+        write(run_sh, "#SBATCH --ntasks-per-node=1           # number of MPI ranks per node\n")
+        write(run_sh, "#SBATCH --cpus-per-task=160           # number of OpenMP threads per MPI rank\n")
+        write(run_sh, "#SBATCH --time=3-00:00:00             # time limit of the run\n")
+        write(run_sh, "#SBATCH --mem=502GB                   # maximum mermory to be used by the job\n\n")
+    end
     write(run_sh, "\n")
     if limit_resources
         write(run_sh, "ulimit -s 128000000\n")
@@ -86,33 +105,28 @@ function run_vortex(cluster::String, method::String;
     write(run_sh, "export OMP_PROC_BIND=true\n")
     write(run_sh, "\n")
     write(run_sh,"./"*vortex_exec*"\n")
+    if slurm_submission
+        write(run_sh, "mv -f output_files "*joinpath(vortex_output, sprintf1("%03d",snaps_todo[1]))*"\n")
+        write(run_sh, "cd "*this_dir*"\n")
+        write(run_sh, "rm -rf "*tmp_dir*"\n")
+    end
     close(run_sh)
     chmod("run.sh",0o700)
     
-    snaps_todo = if snaps_todo == nothing
-        start_snap_num:last_snapnum[1]
-    else
-        snaps_todo
+    if length(snaps_todo) > 1 && slurm_submission
+        error("slurm_submission does only work for single snapshot at the moment.")
     end
-
+    
     for i_snap in snaps_todo
         println("running ",i_snap)
         snap = joinpath(test_runs, "out_"*cluster*"_"*method, "snapdir_"*sprintf1("%03d",i_snap), "snap_"*sprintf1("%03d",i_snap))
         sub = joinpath(test_runs * "out_"*cluster*"_"*method, "groups_"*sprintf1("%03d",i_snap), "sub_"*sprintf1("%03d",i_snap))
 
         halo_positions = read_subfind(sub, "GPOS")
-        # halo_radii = try
-        #     read_subfind(sub, "RTOP")
-        # catch
-        #     read_subfind(sub, "RVIR")
-        # end
         
         first_halo_position = halo_positions[:,1]
         println("first halo position ",first_halo_position)
         
-        # first_halo_radius = halo_radii[1]
-        # println("first halo radius ",first_halo_radius)
-
         # prepare the vortex parameter file
         par_name = "./vortex.dat"
         this_par = open(par_name,"w")
@@ -130,7 +144,6 @@ Files: first, last, every, num files per snapshot -------------------->\n")
         write(this_par, sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*"\n")
         write(this_par, "Max box sidelength (in input length units) --------------------------->\n")
         # adjust size
-        #size = scale*first_halo_radius
         size = 25e3
         write(this_par, sprintf1("%f",2*size)*"\n")
         write(this_par, "Domain to keep particles (in input length units; x1,x2,y1,y2,z1,z2) -->\n")
@@ -198,15 +211,20 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
         # this directory is required by vortex, all outputfiles are stored there
         mkdir("output_files")
         # run vortex using the executable created above
-        run(`./run.sh`)
-        # move the output files to a standardized directory
-        mv("output_files",joinpath(vortex_output, sprintf1("%03d",i_snap)),force=true)
+        if slurm_submission
+            run(`sbatch run.sh`)
+        else
+            run(`./run.sh`)
+            # move the output files to a standardized directory
+            mv("output_files",joinpath(vortex_output, sprintf1("%03d",i_snap)),force=true)
+        end
     end
     
     # change back to original directory and clean up
     cd(this_dir)
-    rm(tmp_dir,force=true, recursive=true)
-    
+    if !slurm_submission
+        rm(tmp_dir,force=true, recursive=true)
+    end 
 end
 
 """
