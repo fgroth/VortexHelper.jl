@@ -85,8 +85,8 @@ function run_vortex(cluster::String, method::String;
     write(run_sh, "#!/bin/bash\n")
     if slurm_submission
         write(run_sh, "#SBATCH -J vortex                     # name of the job\n")
-        write(run_sh, "#SBATCH -o ./%x.%j.out                # output log file with name <job_name>.<job_id>.out\n")
-        write(run_sh, "#SBATCH -e ./%x.%j.err                # error log file with name <job_name>.<job_id>.err\n")
+        write(run_sh, "#SBATCH -o ../../%x.%j.out            # output log file with name <job_name>.<job_id>.out\n")
+        write(run_sh, "#SBATCH -e ../../%x.%j.err            # error log file with name <job_name>.<job_id>.err\n")
         write(run_sh, "#SBATCH -D ./                         # output directory\n")
         write(run_sh, "#SBATCH --nodes=1                     # number of nodes\n")
         write(run_sh, "#SBATCH --ntasks-per-node=1           # number of MPI ranks per node\n")
@@ -96,11 +96,11 @@ function run_vortex(cluster::String, method::String;
     end
     write(run_sh, "\n")
     if limit_resources
-        write(run_sh, "ulimit -s 128000000\n")
-        write(run_sh, "ulimit -v 500000000\n")
+        write(run_sh, "ulimit -s 450000000\n")
+        write(run_sh, "ulimit -v 600000000\n")
         write(run_sh, "ulimit -c 0\n")
     end
-    write(run_sh, "export OMP_NUM_THREADS=16\n")
+    write(run_sh, "export OMP_NUM_THREADS=32\n")
     write(run_sh, "export OMP_STACKSIZE=4000m\n")
     write(run_sh, "export OMP_PROC_BIND=true\n")
     write(run_sh, "\n")
