@@ -84,7 +84,7 @@ function run_vortex(cluster::String, method::String;
     run_sh = open("run.sh","w")
     write(run_sh, "#!/bin/bash\n")
     if slurm_submission
-        write(run_sh, "#SBATCH -J vortex                     # name of the job\n")
+        write(run_sh, "#SBATCH -J vortex_"*cluster*"_"*method*" # name of the job\n")
         write(run_sh, "#SBATCH -o ../../%x.%j.out            # output log file with name <job_name>.<job_id>.out\n")
         write(run_sh, "#SBATCH -e ../../%x.%j.err            # error log file with name <job_name>.<job_id>.err\n")
         write(run_sh, "#SBATCH -D ./                         # output directory\n")
