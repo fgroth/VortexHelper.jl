@@ -99,6 +99,9 @@ function run_vortex(cluster::String, method::String;
         write(run_sh, "ulimit -s 450000000\n")
         write(run_sh, "ulimit -v 600000000\n")
         write(run_sh, "ulimit -c 0\n")
+    else
+        write(run_sh, "ulimit -s unlimited\n")
+        write(run_sh, "ulimit -v unlimited\n")
     end
     write(run_sh, "export OMP_NUM_THREADS=32\n")
     write(run_sh, "export OMP_STACKSIZE=4000m\n")
