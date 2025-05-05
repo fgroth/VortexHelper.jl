@@ -16,7 +16,7 @@ end
                start_snap_num::Int64=100,end_snap_num::Int64=145, scale::Number=3, snaps_todo=nothing, 
                vortex_directory::String="vortex-p",
                limit_resources::Bool=true,
-               slurm_submission::Bool=false,
+               slurm_submission::Bool=false, keep_tmp_dir::Bool=false,
                # adjust the vortex parameters
                filtering::Bool=false,
                cells_per_direction::Int64=128,
@@ -28,7 +28,7 @@ function run_vortex(cluster::String, method::String;
                     start_snap_num::Int64=100,end_snap_num::Int64=145, scale::Number=3, snaps_todo=nothing,
                     vortex_directory::String="vortex-p",
                     limit_resources::Bool=true,
-                    slurm_submission::Bool=false,
+                    slurm_submission::Bool=false, keep_tmp_dir::Bool=false,
                     # adjust the vortex parameters
                     filtering::Bool=false,
                     cells_per_direction::Int64=128,
@@ -49,7 +49,7 @@ function run_vortex(cluster::String, method::String;
     this_dir = pwd()
 
     # create temporary directory to run vortex.
-    tmp_dir = mktempdir("./")
+    tmp_dir = mktempdir("./", cleanup=(!slurm_submission&&!keep_tmp_dir)) # make sure the path is not deleted if running in slurm mode, as we might close the julia session.
     vortex_exec = if occursin("mfm",method)
         "vortex_mfm"
     else
@@ -62,6 +62,7 @@ function run_vortex(cluster::String, method::String;
     end
     cp(joinpath(vortex_directory, "src"), joinpath(tmp_dir, "src"))
     cd(joinpath(tmp_dir, "src"))
+    println("working in temporary directory ",tmp_dir)
 
     # this is where vortex takes the input data from
     symlink(joinpath(test_runs, "out_"*cluster*"_"*method),"./simulation")
@@ -90,19 +91,22 @@ function run_vortex(cluster::String, method::String;
         write(run_sh, "#SBATCH -D ./                         # output directory\n")
         write(run_sh, "#SBATCH --nodes=1                     # number of nodes\n")
         write(run_sh, "#SBATCH --ntasks-per-node=1           # number of MPI ranks per node\n")
-        write(run_sh, "#SBATCH --cpus-per-task=160           # number of OpenMP threads per MPI rank\n")
+        write(run_sh, "#SBATCH --cpus-per-task=80            # number of OpenMP threads per MPI rank\n")
         write(run_sh, "#SBATCH --time=3-00:00:00             # time limit of the run\n")
-        write(run_sh, "#SBATCH --mem=502GB                   # maximum mermory to be used by the job\n\n")
+        write(run_sh, "#SBATCH --mem=200GB                   # maximum mermory to be used by the job\n\n")
     end
     write(run_sh, "\n")
     if limit_resources
-        write(run_sh, "ulimit -s 450000000\n")
-        write(run_sh, "ulimit -v 600000000\n")
+        write(run_sh, "ulimit -s 200000000\n")
+        write(run_sh, "ulimit -v unlimited\n")
         write(run_sh, "ulimit -c 0\n")
     else
         write(run_sh, "ulimit -s unlimited\n")
         write(run_sh, "ulimit -v unlimited\n")
+        write(run_sh, "ulimit -c 0\n")
     end
+    write(run_sh, "echo running in\n")
+    write(run_sh, "echo | pwd\n")
     write(run_sh, "export OMP_NUM_THREADS=32\n")
     write(run_sh, "export OMP_STACKSIZE=4000m\n")
     write(run_sh, "export OMP_PROC_BIND=true\n")
@@ -111,7 +115,9 @@ function run_vortex(cluster::String, method::String;
     if slurm_submission
         write(run_sh, "mv -f output_files "*joinpath(vortex_output, sprintf1("%03d",snaps_todo[1]))*"\n")
         write(run_sh, "cd "*this_dir*"\n")
-        write(run_sh, "rm -rf "*tmp_dir*"\n")
+        if !keep_tmp_dir
+            write(run_sh, "rm -rf "*tmp_dir*"\n")
+        end
     end
     close(run_sh)
     chmod("run.sh",0o700)
@@ -225,7 +231,7 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
     
     # change back to original directory and clean up
     cd(this_dir)
-    if !slurm_submission
+    if !slurm_submission && !keep_tmp_dir
         rm(tmp_dir,force=true, recursive=true)
     end 
 end
