@@ -18,9 +18,9 @@ end
                limit_resources::Bool=true,
                slurm_submission::Bool=false, keep_tmp_dir::Bool=false,
                # adjust the vortex parameters
-               filtering::Bool=false,
+               filtering::Int64=0,
                cells_per_direction::Int64=128,
-               n_levels::Int64=9, n_particles_refinement::Int64=8)
+               n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1)
 
 Run Vortex for given snapshots of `cluster` and `method`.
 """
@@ -30,9 +30,9 @@ function run_vortex(cluster::String, method::String;
                     limit_resources::Bool=true,
                     slurm_submission::Bool=false, keep_tmp_dir::Bool=false,
                     # adjust the vortex parameters
-                    filtering::Bool=false,
+                    filtering::Int64=0,
                     cells_per_direction::Int64=128,
-                    n_levels::Int64=9, n_particles_refinement::Int64=8)
+                    n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1)
     
     last_snapnum=zeros(Int64,1)
     for snapnum in end_snap_num:-1:start_snap_num
@@ -55,7 +55,7 @@ function run_vortex(cluster::String, method::String;
     else
         "vortex_sph"
     end
-    vortex_exec = if filtering
+    vortex_exec = if filtering == 1
         vortex_exec * "_filtered"
     else
         vortex_exec * "_unfiltered"
@@ -140,80 +140,85 @@ function run_vortex(cluster::String, method::String;
         par_name = "./vortex.dat"
         this_par = open(par_name,"w")
 
-        write(this_par, "***********************************************************************
-*                  VORTEX-GADGET PARAMETERS FILE                      *
-***********************************************************************
-*       General parameters block                                      *
-***********************************************************************
-Files: first, last, every, num files per snapshot -------------------->\n")
+        println(this_par, "***********************************************************************")
+        println(this_par, "*                  VORTEX-GADGET PARAMETERS FILE                      *")
+        println(this_par, "***********************************************************************")
+        println(this_par, "*       General parameters block                                      *")
+        println(this_par, "***********************************************************************")
+        println(this_par, "Files: first, last, every, num files per snapshot -------------------->")
         # adjust snap number
         n_snap = sum(startswith.(readdir(joinpath(test_runs, "out_"*cluster*"_"*method, "snapdir_"*sprintf1("%03d",i_snap))), "snap_"*sprintf1("%03d",i_snap)))
-        write(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*sprintf1("%d",n_snap)*"\n")
-        write(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->\n")
-        write(this_par, sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*"\n")
-        write(this_par, "Max box sidelength (in input length units) --------------------------->\n")
+        println(this_par, sprintf1("%d",i_snap)*","*sprintf1("%d",i_snap)*",1,"*sprintf1("%d",n_snap)*"")
+        println(this_par, "Cells per direction (NX,NY,NZ) --------------------------------------->")
+        println(this_par, sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*","*sprintf1("%d",cells_per_direction)*"")
+        println(this_par, "Max box sidelength (in input length units) --------------------------->")
         # adjust size
         size = 25e3
-        write(this_par, sprintf1("%f",2*size)*"\n")
-        write(this_par, "Domain to keep particles (in input length units; x1,x2,y1,y2,z1,z2) -->\n")
-        write(this_par, sprintf1("%f",first_halo_position[1]-size)*","*sprintf1("%f",first_halo_position[1]+size)*","*
+        println(this_par, sprintf1("%f",2*size)*"")
+        println(this_par, "Domain to keep particles (in input length units; x1,x2,y1,y2,z1,z2) -->")
+        println(this_par, sprintf1("%f",first_halo_position[1]-size)*","*sprintf1("%f",first_halo_position[1]+size)*","*
             sprintf1("%f",first_halo_position[2]-size)*","*sprintf1("%f",first_halo_position[2]+size)*","*
-            sprintf1("%f",first_halo_position[3]-size)*","*sprintf1("%f",first_halo_position[3]+size)*"\n")
-        write(this_par, "!***********************************************************************\n!*       Output customisation (0=no, 1=yes)                            *\n!***********************************************************************\n")
-        write(this_par, "!Gridded data: kernel length, density (mutually exclusive), velocity -->\n0,1,1\n")
-        write(this_par, "Gridded results: vcomp, vsol, scalar_pot, vector_pot, div(v), curl(v)->\n1,1,1,1,1,1\n")
-        write(this_par, "Particle results: interpolation error, particle-wise results --------->\n1,1\n")
-        write(this_par, "Filter: gridded Mach/ABVC, shocked cells, filtering length, vturb ---->\n")
-        if filtering
-            write(this_par, "1,1,1,1\n")
+            sprintf1("%f",first_halo_position[3]-size)*","*sprintf1("%f",first_halo_position[3]+size)*"")
+        println(this_par, "***********************************************************************")
+        println(this_par, "*       Output customisation (0=no, 1=yes)                            *")
+        println(this_par, "***********************************************************************")
+        println(this_par, "Gridded data: kernel length, density (mutually exclusive), velocity -->")
+        println(this_par, "0,1,1")
+        println(this_par, "Gridded results: vcomp, vsol, scalar_pot, vector_pot, div(v), curl(v)->")
+        println(this_par, "1,1,1,1,1,1")
+        println(this_par, "Particle results: interpolation error, particle-wise results --------->")
+        println(this_par, "1,1")
+        println(this_par, "Filter: gridded Mach/ABVC, shocked cells, filtering length, vturb ---->")
+        if filtering != 0
+            println(this_par, "1,1,1,1")
         else
-            write(this_par, "0,0,0,0\n")
+            println(this_par, "0,0,0,0")
         end
-        write(this_par, "***********************************************************************
-*       Mesh creation parameters                                      *
-***********************************************************************
-Number of levels ----------------------------------------------------->\n")
-        write(this_par, sprintf1("%d",n_levels)*"\n")
-        write(this_par, "Number of particles for a cell to be refinable ----------------------->\n")
-        write(this_par, sprintf1("%d",n_particles_refinement)*"\n")
-        write(this_par, "Minimum size of a refinement patch to be accepted -------------------->
-6
-Cells not to be refined from the border (base grid) ------------------>
-2
-***********************************************************************
-*       Velocity interpolation parameters                             *
-***********************************************************************
-Number of neighbours for interpolation ------------------------------->\n")
+        println(this_par, "***********************************************************************")
+        println(this_par, "*       Mesh creation parameters                                      *")
+        println(this_par, "***********************************************************************")
+        println(this_par, "Number of levels ----------------------------------------------------->")
+        println(this_par, sprintf1("%d",n_levels)*"")
+        println(this_par, "Number of particles for a cell to be refinable ----------------------->")
+        println(this_par, sprintf1("%d",n_particles_refinement)*"")
+        println(this_par, "Minimum size of a refinement patch to be accepted -------------------->")
+        println(this_par, sprintf1("%d", minimum_refinement_patchsize))
+        println(this_par, "Cells not to be refined from the border (base grid) ------------------>")
+        println(this_par, "2")
+        println(this_par, "***********************************************************************")
+        println(this_par, "*       Velocity interpolation parameters                             *")
+        println(this_par, "***********************************************************************")
+        println(this_par, "Number of neighbours for interpolation ------------------------------->")
         if occursin("mfm",method)
-            write(this_par, "32\n")
+            println(this_par, "32")
         else
-            write(this_par, "295\n")
+            println(this_par, "295")
         end
-        write(this_par,"***********************************************************************
-*       Poisson solver                                                *
-***********************************************************************
-SOR presion parameter, SOR max iter, border for AMR patches ---------->
-1e-9,1000,2
-***********************************************************************
-*       Multifiltering                                                *
-***********************************************************************
-Multiscale filter: apply filter -------------------------------------->\n")
-        if filtering
-            write(this_par, "1,1,1,1\n")
-        else
-            write(this_par, "0,0,0,0\n")
-        end
-write(this_par, "Filtering parameters: tolerance, growing step, max. num. of its. ----->
-0.1,1.05,200
-***********************************************************************
-*       On-the-fly shock detection (for multifiltering)               *
-***********************************************************************
-Threshold on velocity divergence (negative, input units) ------------->
--1.25
-Threshold on artificial bulk viscosity constant ---------------------->
-1.
-Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
-1,2.0\n")
+        println(this_par, "***********************************************************************")
+        println(this_par, "*       Poisson solver                                                *")
+        println(this_par, "***********************************************************************")
+        println(this_par, "SOR presion parameter, SOR max iter, border for AMR patches ---------->")
+        println(this_par, "1e-9,1000,2")
+        println(this_par, "***********************************************************************")
+        println(this_par, "*       Turbulent filter                                              *")
+        println(this_par, "***********************************************************************")
+        println(this_par, "Apply filter (1: multiscale filter; 2: fix-scale filter) ------------->")
+        println(this_par, sprintf1("%d", filtering)*"")
+        println(this_par, "Filtering parameters: tolerance, growing step, max. num. of its. ----->")
+        println(this_par, "0.1,1.05,200")
+        println(this_par, "Maximum (for multiscale) or fix filt. length (input length units) ---->")
+        println(this_par, "1000.0")
+        println(this_par, "Smooth filtering length before applying the filter (0=no, 1=yes) ----->")
+        println(this_par, "1")
+        println(this_par, "***********************************************************************")
+        println(this_par, "*       On-the-fly shock detection (for multifiltering)               *")
+        println(this_par, "***********************************************************************")
+        println(this_par, "Threshold on velocity divergence (negative, input units) ------------->")
+        println(this_par, "-1.25")
+        println(this_par, "Threshold on artificial bulk viscosity constant ---------------------->")
+        println(this_par, "1.")
+        println(this_par, "Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->")
+        println(this_par, "1,2.0")
 
         close(this_par)
 
@@ -237,12 +242,12 @@ Use particle's MACH field (0=no, 1=yes), Mach threshold -------------->
 end
 
 """
-    vortex_output_directory(cluster::String, method::String; filtering::Bool=true)
+    vortex_output_directory(cluster::String, method::String; filtering::Int64=1)
 
 Return desired location of directory containing vortex output.
 """
-function vortex_output_directory(cluster::String, method::String; filtering::Bool=true)
-    prefix = if filtering
+function vortex_output_directory(cluster::String, method::String; filtering::Int64=1)
+    prefix = if filtering == 1
         "filtered_"
     else
         ""
