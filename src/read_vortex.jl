@@ -1,13 +1,12 @@
 using FortranFiles
 
 """
-    read_particle_data(file::String, include_density::Bool=true)
+    read_particle_data(file::String)
 
 Read particle data from unformatted fortran output of vortex.
-Return `Dict` containing `"pos"`, `"vel_orig"`, `"mass"`, `"vel"`, `"velcomp"`, `"velrot"`(, `"rho"`) vectors.
-The `"rho"` field is only a private patch to vortex to simplify some analyis, it is no present in the public version.
+Return `Dict` containing `"pos"`, `"vel_orig"`, `"mass"`, `"vel"`, `"velcomp"`, `"velrot"` vectors.
 """
-function read_particle_data(file::String, include_density::Bool=true)
+function read_particle_data(file::String)
 
     f = FortranFile(file) 
     n = read(f,Int32)
@@ -48,12 +47,7 @@ function read_particle_data(file::String, include_density::Bool=true)
     data["velrot"][2,:] = read(f,data["velrot"][2,:])
     data["velrot"][3,:] = read(f,data["velrot"][3,:])
 
-    if include_density
-        # read density
-        data["rho"] = zeros(Float32,n)
-        data["rho"] = read(f,data["rho"])
-    end
-
-    return data
+    close(f)
     
+    return data
 end
