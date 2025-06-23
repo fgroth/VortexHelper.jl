@@ -18,11 +18,13 @@ end
                limit_resources::Bool=true,
                slurm_submission::Bool=false, keep_tmp_dir::Bool=false,
                # adjust the vortex parameters
-               filtering::Int64=0,
+               filtering_length::Real=0,
                cells_per_direction::Int64=128,
                n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1)
 
 Run Vortex for given snapshots of `cluster` and `method`.
+
+`filtering_length<0` means multi-scale filtering, typical values (corresponding to negative of maximum filtering legnth) are -1000.0. `filtering_length>0` means constant size filtering, and `filtering_length=0` un-filtered.
 """
 function run_vortex(cluster::String, method::String;
                     start_snap_num::Int64=100,end_snap_num::Int64=145, scale::Number=3, snaps_todo=nothing,
@@ -30,7 +32,7 @@ function run_vortex(cluster::String, method::String;
                     limit_resources::Bool=true,
                     slurm_submission::Bool=false, keep_tmp_dir::Bool=false,
                     # adjust the vortex parameters
-                    filtering::Int64=0,
+                    filtering_length::Real=0,
                     cells_per_direction::Int64=128,
                     n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1)
     
@@ -55,7 +57,7 @@ function run_vortex(cluster::String, method::String;
     else
         "vortex_sph"
     end
-    vortex_exec = if filtering == 1
+    vortex_exec = if filtering_length != 0
         vortex_exec * "_filtered"
     else
         vortex_exec * "_unfiltered"
@@ -67,7 +69,7 @@ function run_vortex(cluster::String, method::String;
     # this is where vortex takes the input data from
     symlink(joinpath(test_runs, "out_"*cluster*"_"*method),"./simulation")
 
-    vortex_output = vortex_output_directory(cluster, method, filtering=filtering)
+    vortex_output = vortex_output_directory(cluster, method, filtering_length=filtering_length)
     try
         mkdir(vortex_output)
     catch
@@ -169,7 +171,7 @@ function run_vortex(cluster::String, method::String;
         println(this_par, "Particle results: interpolation error, particle-wise results --------->")
         println(this_par, "1,1")
         println(this_par, "Filter: gridded Mach/ABVC, shocked cells, filtering length, vturb ---->")
-        if filtering != 0
+        if filtering_length != 0
             println(this_par, "1,1,1,1")
         else
             println(this_par, "0,0,0,0")
@@ -203,11 +205,18 @@ function run_vortex(cluster::String, method::String;
         println(this_par, "*       Turbulent filter                                              *")
         println(this_par, "***********************************************************************")
         println(this_par, "Apply filter (1: multiscale filter; 2: fix-scale filter) ------------->")
+        if filtering_length == 0
+            filtering = 0
+        elseif filtering_length < 0
+            filtering = 1
+        else # filtering_length > 0
+            filtering = 2
+        end
         println(this_par, sprintf1("%d", filtering)*"")
         println(this_par, "Filtering parameters: tolerance, growing step, max. num. of its. ----->")
         println(this_par, "0.1,1.05,200")
         println(this_par, "Maximum (for multiscale) or fix filt. length (input length units) ---->")
-        println(this_par, "1000.0")
+        println(this_par, sprintf1("%d",abs(filtering_length)))
         println(this_par, "Smooth filtering length before applying the filter (0=no, 1=yes) ----->")
         println(this_par, "1")
         println(this_par, "***********************************************************************")
@@ -242,15 +251,17 @@ function run_vortex(cluster::String, method::String;
 end
 
 """
-    vortex_output_directory(cluster::String, method::String; filtering::Int64=1)
+    vortex_output_directory(cluster::String, method::String; filtering_length::Real=-1)
 
 Return desired location of directory containing vortex output.
 """
-function vortex_output_directory(cluster::String, method::String; filtering::Int64=1)
-    prefix = if filtering == 1
-        "filtered_"
-    else
-        ""
+function vortex_output_directory(cluster::String, method::String; filtering_length::Real=-1)
+    if filtering_length < 0
+        prefix = "multi-filtered_"
+    elseif filtering_length > 0
+        prefix = "filtered-"*sprintf1("%d",filtering_length)*"_"
+    else # filtering_length == 0
+        prefix = "unfiltered_"
     end
     
     return joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method)
