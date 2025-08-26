@@ -259,7 +259,7 @@ function vortex_output_directory(cluster::String, method::String; filtering_leng
     if filtering_length < 0
         prefix = "multi-filtered_"
     elseif filtering_length > 0
-        prefix = "filtered-"*sprintf1("%d",filtering_length)*"_"
+        prefix = "filtered-"*sprintf1("%g",filtering_length)*"_"
     else # filtering_length == 0
         prefix = "unfiltered_"
     end
