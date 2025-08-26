@@ -216,7 +216,7 @@ function run_vortex(cluster::String, method::String;
         println(this_par, "Filtering parameters: tolerance, growing step, max. num. of its. ----->")
         println(this_par, "0.1,1.05,200")
         println(this_par, "Maximum (for multiscale) or fix filt. length (input length units) ---->")
-        println(this_par, sprintf1("%d",abs(filtering_length)))
+        println(this_par, sprintf1("%g",abs(filtering_length)))
         println(this_par, "Smooth filtering length before applying the filter (0=no, 1=yes) ----->")
         println(this_par, "1")
         println(this_par, "***********************************************************************")
