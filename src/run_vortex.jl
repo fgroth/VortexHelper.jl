@@ -258,13 +258,13 @@ function run_vortex(cluster::String, method::String;
 end
 
 """
-    vortex_output_directory(cluster::String, method::String;
-                            filtering_length::Real=-1, weighting::String="")
+    vortex_output_directory(cluster::AbstractString, method::AbstractString;
+                            filtering_length::Real=-1, weighting::AbstractString="")
 
 Return desired location of directory containing vortex output.
 """
-function vortex_output_directory(cluster::String, method::String;
-                                 filtering_length::Real=-1, weighting::String="")
+function vortex_output_directory(cluster::AbstractString, method::AbstractString;
+                                 filtering_length::Real=-1, weighting::AbstractString="")
     if filtering_length < 0
         prefix = "multi-filtered_"
     elseif filtering_length > 0
