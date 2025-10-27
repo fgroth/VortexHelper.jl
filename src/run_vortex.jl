@@ -20,11 +20,14 @@ end
                # adjust the vortex parameters
                filtering_length::Real=0,
                cells_per_direction::Int64=128,
-               n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1)
+               n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1,
+               weighting::String="")
 
 Run Vortex for given snapshots of `cluster` and `method`.
 
 `filtering_length<0` means multi-scale filtering, typical values (corresponding to negative of maximum filtering legnth) are -1000.0. `filtering_length>0` means constant size filtering, and `filtering_length=0` un-filtered.
+
+If `weighting` is an empty string, the default is assumed (no further suffix to executable). Otherwise, it is added as suffix to the executable and the output directory.
 """
 function run_vortex(cluster::String, method::String;
                     start_snap_num::Int64=100,end_snap_num::Int64=145, scale::Number=3, snaps_todo=nothing,
@@ -34,7 +37,8 @@ function run_vortex(cluster::String, method::String;
                     # adjust the vortex parameters
                     filtering_length::Real=0,
                     cells_per_direction::Int64=128,
-                    n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1)
+                    n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1,
+                    weighting::String="") # empty string uses default weighting
     
     last_snapnum=zeros(Int64,1)
     for snapnum in end_snap_num:-1:start_snap_num
@@ -62,6 +66,9 @@ function run_vortex(cluster::String, method::String;
     else
         vortex_exec * "_unfiltered"
     end
+    if weighting != ""
+        vortex_exec = vortex_exec*"_"*weighting
+    end
     cp(joinpath(vortex_directory, "src"), joinpath(tmp_dir, "src"))
     cd(joinpath(tmp_dir, "src"))
     println("working in temporary directory ",tmp_dir)
@@ -69,7 +76,7 @@ function run_vortex(cluster::String, method::String;
     # this is where vortex takes the input data from
     symlink(joinpath(test_runs, "out_"*cluster*"_"*method),"./simulation")
 
-    vortex_output = vortex_output_directory(cluster, method, filtering_length=filtering_length)
+    vortex_output = vortex_output_directory(cluster, method, filtering_length=filtering_length, weighting=weighting)
     try
         mkdir(vortex_output)
     catch
@@ -251,11 +258,13 @@ function run_vortex(cluster::String, method::String;
 end
 
 """
-    vortex_output_directory(cluster::String, method::String; filtering_length::Real=-1)
+    vortex_output_directory(cluster::String, method::String;
+                            filtering_length::Real=-1, weighting::String="")
 
 Return desired location of directory containing vortex output.
 """
-function vortex_output_directory(cluster::String, method::String; filtering_length::Real=-1)
+function vortex_output_directory(cluster::String, method::String;
+                                 filtering_length::Real=-1, weighting::String="")
     if filtering_length < 0
         prefix = "multi-filtered_"
     elseif filtering_length > 0
@@ -263,6 +272,11 @@ function vortex_output_directory(cluster::String, method::String; filtering_leng
     else # filtering_length == 0
         prefix = "unfiltered_"
     end
+    if weighting == ""
+        suffix=""
+    else
+        suffix="_"*weighting
+    end
     
-    return joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method)
+    return joinpath(test_runs, "vortex_analysis", prefix*cluster*"_"*method*suffix)
 end
