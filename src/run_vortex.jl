@@ -18,7 +18,7 @@ end
                limit_resources::Bool=true,
                slurm_submission::Bool=false, keep_tmp_dir::Bool=false,
                # adjust the vortex parameters
-               filtering_length::Real=0,
+               filtering_length::Real=0, smooth_filtering::Bool=false,
                cells_per_direction::Int64=128,
                n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1,
                weighting::String="")
@@ -35,7 +35,7 @@ function run_vortex(cluster::String, method::String;
                     limit_resources::Bool=true,
                     slurm_submission::Bool=false, keep_tmp_dir::Bool=false,
                     # adjust the vortex parameters
-                    filtering_length::Real=0,
+                    filtering_length::Real=0, smooth_filtering::Bool=false,
                     cells_per_direction::Int64=128,
                     n_levels::Int64=9, n_particles_refinement::Int64=8, minimum_refinement_patchsize::Int64=-1,
                     weighting::String="") # empty string uses default weighting
@@ -225,7 +225,7 @@ function run_vortex(cluster::String, method::String;
         println(this_par, "Maximum (for multiscale) or fix filt. length (input length units) ---->")
         println(this_par, sprintf1("%g",abs(filtering_length)))
         println(this_par, "Smooth filtering length before applying the filter (0=no, 1=yes) ----->")
-        println(this_par, "1")
+        println(this_par, smooth_filtering ? "1" : "0")
         println(this_par, "***********************************************************************")
         println(this_par, "*       On-the-fly shock detection (for multifiltering)               *")
         println(this_par, "***********************************************************************")
